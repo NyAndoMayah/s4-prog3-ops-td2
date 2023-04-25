@@ -1,0 +1,53 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Storage stack (td2)
+
+Parameters:
+  DBName:
+    Type: String
+    Default: DBPostgres
+Resources:
+  Database:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Retain
+    Properties:
+      DBName: !Ref DBName
+      AllocatedStorage: "20"
+      DBInstanceClass:
+        Ref: DBClass
+      Engine: postgres
+      MasterUsername: !Sub "{{resolve:ssm:db/username}}"
+      MasterUserPassword: !Sub "{{resolve:ssm:db/password}}"
+  UserName:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: db/username
+      Type: String
+      Value: ${{ secrets.DB_USERNAME }}
+  UserPassword:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: db/username
+      Type: String
+      Value: ${{ secrets.DB_USERPASSWORD }}
+  DatabaseURL:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /db/url
+      Type: String
+      Value:
+        Fn::Join:
+          - ""
+          - - jdbc:postgresql://
+            - Fn::GetAtt:
+                - Database
+                - Endpoint.Address
+            - ":"
+            - Fn::GetAtt:
+                - Database
+                - Endpoint.Port
+            - "/"
+            - !Ref DBName
+
+Outputs:
+  DatabaseSSM:
+    Value: !Ref DatabaseSSM
